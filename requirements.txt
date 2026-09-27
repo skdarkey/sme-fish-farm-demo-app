@@ -1,0 +1,9 @@
+streamlit[auth]>=1.64,<2
+SQLAlchemy>=2.0,<3
+psycopg[binary]>=3.2,<4
+pandas>=2.2,<3
+plotly>=6,<7
+python-dotenv>=1,<2
+pytest>=8,<10
+requests>=2.32,<3
+numpy>=2,<3
