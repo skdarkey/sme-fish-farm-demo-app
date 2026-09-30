@@ -1,10 +1,10 @@
-# Pondwise — fish farm management & analytics
+# Pondwise â€” fish farm management & analytics
 
 A runnable first version using Streamlit, SQLAlchemy 2, PostgreSQL and Plotly.
 Includes pond and stocking registers, daily records, record corrections, feed and
 growth trends, water alerts, harvest tracking, historical KPIs and CSV exports.
 Also includes native OIDC sign-in, manager/stocktaker roles, pond water visits,
-FWI dataset imports, advanced trends and a configurable farm-data LLM chatbot.
+advanced trends and a configurable farm-data LLM chatbot.
 
 ## Run locally
 
@@ -22,7 +22,10 @@ Open http://localhost:8501. Default storage uses `data/demo.db` (SQLite), but
 authentication now defaults to secure OIDC and requires provider configuration.
 Follow [authentication setup](docs/AUTHENTICATION.md). For a local synthetic-data
 preview only, set `APP_MODE=demo` and `AUTH_MODE=demo` in `.env` before starting.
-On Windows, `./run.ps1` also starts the installed app, bound to localhost.
+On Windows, `./run.ps1` starts the installed app, bound to localhost.
+Use `./run.ps1 -Demo` to explicitly select local SQLite and demo access for that
+process, even if the terminal inherits hosted settings. Stop old Streamlit
+processes before switching modes.
 Click **Load sample farm** to create three ponds and 60 days of synthetic records,
 or start with your own empty register. Demo data is never seeded automatically.
 
@@ -41,14 +44,21 @@ No demo records are inserted into PostgreSQL. Mode switching selects a separate
 database; it does not migrate demo data. Never commit `.env` or database files.
 Environment variables take precedence over `.env`.
 
+## Client branding
+
+Set `CLIENT_NAME=Sekom Farms` in `.env` (or the hosting environment) and restart
+Streamlit. The sidebar and browser title become **A3 Pondwise | Sekom Farms**.
+Leaving it blank displays **A3 Pondwise**. Use a separate database and credentials
+for each client deployment; this display name does not isolate client data.
+
 ## Architecture
 
 ```text
 Streamlit UI (app.py)
-    ├── Business services (farm/services.py): validated transactional writes
-    │       └── SQLAlchemy models → PostgreSQL
-    └── Analytics (farm/analytics.py): derived KPIs and alerts
-            └── Plotly charts / CSV reports / scripts/report.py
+    â”œâ”€â”€ Business services (farm/services.py): validated transactional writes
+    â”‚       â””â”€â”€ SQLAlchemy models â†’ PostgreSQL
+    â””â”€â”€ Analytics (farm/analytics.py): derived KPIs and alerts
+            â””â”€â”€ Plotly charts / CSV reports / scripts/report.py
 ```
 
 The four responsibilities remain separate even though Streamlit hosts both the UI
@@ -62,7 +72,6 @@ analytics can be reused by an API or scheduled pipeline later.
 | DailyLog | One record per batch/date: feed, mortality, harvest, growth, water and notes |
 | WaterVisit | Multiple pond observations per day, water chemistry and corrective follow-up |
 | AppUser / AccessAudit | OIDC identities, approved roles, disabled status and access-change history |
-| ResearchDataset / ResearchRecord | Versioned FWI imports with original source values and provenance |
 
 Multiple batches can share a pond. Daily-log water readings remain tied to batches;
 the dedicated Water visits page records pond observations independently. These two
@@ -74,19 +83,19 @@ remaining fish count reaches zero.
 
 ## Metric definitions
 
-- Remaining fish = stocked − deaths − harvested count.
-- Survival = (stocked − deaths) / stocked × 100; harvest is not mortality.
-- Estimated standing biomass = remaining fish × latest sample weight / 1,000.
+- Remaining fish = stocked âˆ’ deaths âˆ’ harvested count.
+- Survival = (stocked âˆ’ deaths) / stocked Ã— 100; harvest is not mortality.
+- Estimated standing biomass = remaining fish Ã— latest sample weight / 1,000.
   Until a growth sample exists, this uses stocking weight. Sample dates are shown.
 - Economic FCR = cumulative feed through the latest growth sample / (standing
-  biomass at that sample + cumulative harvested kilograms − initial biomass).
+  biomass at that sample + cumulative harvested kilograms âˆ’ initial biomass).
   Feed and movements after that sample do not enter FCR. FCR is blank without a
   growth sample or positive net gain. Mortality biomass is not recovered.
 - Dashboard metrics are cumulative as of the selected date. Trend start only
   filters charts and daily-record exports.
 - Water alerts evaluate the latest nonmissing oxygen and pH readings independently.
   Their dates are shown; absent/stale measurements do not mean safe conditions.
-  The 4 mg/L oxygen and 6.5–8.5 pH defaults are illustrative, session-configurable
+  The 4 mg/L oxygen and 6.5â€“8.5 pH defaults are illustrative, session-configurable
   thresholds, not species-specific husbandry recommendations.
 
 Missing daily logs represent missing observations, not confirmed zero activity.
@@ -117,7 +126,12 @@ User-access changes have a separate audit table. Configure OIDC and HTTPS before
 deployment; never expose demo authentication publicly.
 
 `create_all` bootstraps an empty schema; it does not migrate existing tables.
-This update adds new tables only; existing ponds, batches and daily logs are preserved.
+The retired demonstration research tables can be removed from an existing deployment
+with `python -m scripts.remove_fwi_data`. This drops only `research_records` and
+`research_datasets`, without CASCADE, and verifies other table row counts.
+Existing ponds, batches, daily logs, water visits and access records are preserved.
+Deletion does not erase historical backups, PostgreSQL WAL, or storage snapshots;
+remove demonstration copies there under your backup retention policy.
 Adopt Alembic before evolving a database containing real records. PostgreSQL row
 locks serialize daily writes per batch; the SQLite demo is for local single-user
 evaluation. The current dashboard reads all records and is designed for small
@@ -125,7 +139,6 @@ farm datasets; larger deployments should push filtering/aggregation into SQL.
 
 ## Feature guides
 
-- [FWI dataset compatibility and data limitations](docs/FWI_COMPATIBILITY.md)
 - [Authentication, registration and role administration](docs/AUTHENTICATION.md)
 - [Advanced trends and LLM server configuration](docs/INSIGHTS.md)
 

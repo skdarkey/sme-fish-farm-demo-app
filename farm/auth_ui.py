@@ -20,7 +20,7 @@ def sign_in(engine):
         if not demo_allowed(engine):
             st.error("Demo authentication is allowed only with the local SQLite demo database.")
             st.stop()
-        st.warning("Local demo access · authentication is disabled. Use AUTH_MODE=oidc for real farm data.")
+        # st.warning("Local demo access · authentication is disabled. Use AUTH_MODE=oidc for real farm data.")
         return Actor(-1)
     if mode != "oidc":
         st.error("AUTH_MODE must be oidc or demo.")

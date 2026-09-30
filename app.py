@@ -10,11 +10,18 @@ from farm.demo import seed_demo
 from farm.services import add_batch, add_pond, read_data, save_log
 from farm.auth import PAGES, authorize_write, pages_for, require
 from farm.auth_ui import render_users, sign_in
-from farm.fwi_ui import render_fwi
 from farm.insights_ui import render_insights
 from farm.water import render_visits
 
-st.set_page_config(page_title="Pondwise | Farm operations", page_icon="🐟", layout="wide")
+import os
+from dotenv import load_dotenv
+from farm.db import ROOT
+
+load_dotenv(ROOT / ".env")
+client_name = os.getenv("CLIENT_NAME", "").strip()
+instance_title = "A3 Pondwise" + (f" | {client_name}" if client_name else "")
+
+st.set_page_config(page_title=instance_title, page_icon="🐟", layout="wide")
 st.markdown("""<style>
 .block-container {padding-top:2rem; max-width:1500px;}
 [data-testid="stMetric"] {background:white; border:1px solid #dbe5e9; padding:18px; border-radius:12px;}
@@ -31,14 +38,13 @@ except requests.RequestException:
     st.write("Unable to retrieve server outbound IP.")
 
 @st.cache_resource
-def database():
-    mode, url = settings()
+def database(mode, url):
     engine = make_engine(url)
     return mode, engine
 
 
 try:
-    mode, engine = database()
+    mode, engine = database(*settings())
     initialize(engine)
     actor = sign_in(engine)
     ponds, batches, logs = read_data(engine)
@@ -74,7 +80,7 @@ def chart(fig):
 
 
 with st.sidebar:
-    st.title("🐟 Pondwise")
+    st.title(f"🐟 {instance_title}")
     st.caption("FARM MANAGEMENT & ANALYTICS")
     allowed_pages = pages_for(engine, actor)
     page = st.radio("Workspace", allowed_pages)
@@ -100,8 +106,6 @@ if "notice" in st.session_state:
 
 if page == "User access":
     render_users(engine, actor)
-elif page == "FWI data":
-    render_fwi(engine, actor)
 elif page == "Advanced insights":
     render_insights(engine, actor, ponds, batches, logs)
 elif page == "Water visits":

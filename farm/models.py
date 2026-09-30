@@ -1,6 +1,6 @@
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -75,30 +75,6 @@ class AccessAudit(Base):
     target_id: Mapped[int] = mapped_column(ForeignKey("app_users.id"))
     change: Mapped[str] = mapped_column(Text)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-
-
-class ResearchDataset(Base):
-    __tablename__ = "research_datasets"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    digest: Mapped[str] = mapped_column(String(64), unique=True)
-    release: Mapped[str] = mapped_column(String(100))
-    source: Mapped[str] = mapped_column(Text)
-    manifest: Mapped[dict] = mapped_column(JSON)
-    imported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-
-
-class ResearchRecord(Base):
-    """Versioned source rows; no inferred batch identity or invented inventory."""
-    __tablename__ = "research_records"
-    __table_args__ = (UniqueConstraint("dataset_id", "file", "row_number"),)
-    id: Mapped[int] = mapped_column(primary_key=True)
-    dataset_id: Mapped[int] = mapped_column(ForeignKey("research_datasets.id"), index=True)
-    file: Mapped[str] = mapped_column(String(50))
-    row_number: Mapped[int] = mapped_column(Integer)
-    external_pond_id: Mapped[str] = mapped_column(String(100), index=True)
-    region: Mapped[str] = mapped_column(String(100))
-    observed_on: Mapped[date] = mapped_column(Date, index=True)
-    payload: Mapped[dict] = mapped_column(JSON)
 
 
 class WaterVisit(Base):

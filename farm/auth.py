@@ -15,10 +15,10 @@ PAGES = {
     "Daily records": "record", "Water visits": "record",
     "Ponds & stocking": "manage",
     "Reports": "analyze", "Advanced insights": "analyze",
-    "FWI data": "import", "User access": "users",
+    "User access": "users",
 }
 ROLE_PERMISSIONS = {"pending": set(), "stocktaker": {"record"},
-                    "manager": {"record", "analyze", "manage", "import", "users"}}
+                    "manager": {"record", "analyze", "manage", "users"}}
 
 
 @dataclass(frozen=True)

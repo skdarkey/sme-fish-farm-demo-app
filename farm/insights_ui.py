@@ -7,7 +7,6 @@ import plotly.express as px
 import streamlit as st
 
 from farm.auth import require
-from farm.fwi import datasets, read_research, water_frame
 from farm.insights import KPI_METRICS, evidence_packet, kpi_trend, trend_statistics, trend_table
 from farm.llm import ask, configuration
 from farm.water import MEASUREMENTS, read_visits
@@ -17,10 +16,7 @@ def render_insights(engine, actor, ponds, batches, logs):
     require(engine, actor, "analyze")
     st.title("Advanced insights")
     st.caption("Explore observed trends and ask questions using the selected data as evidence.")
-    versions = datasets(engine, actor)
     choices = ["Farm daily records", "Pond water visits"]
-    if not versions.empty:
-        choices.append("FWI research snapshot")
     source = st.selectbox("Data source", choices)
     source_details = source
     if source == "Farm daily records":
@@ -36,17 +32,8 @@ def render_insights(engine, actor, ponds, batches, logs):
         frame = visits[["day", "period", *MEASUREMENTS]].copy()
         frame["pond"] = visits.pond_id.map(ponds.set_index("id").name.to_dict())
         metrics = MEASUREMENTS
-    else:
-        labels = {int(r.id): f"{r.release} · {str(r.digest)[:8]}" for r in versions.itertuples()}
-        version = st.selectbox("Research snapshot", list(labels), format_func=labels.get)
-        frame = water_frame(read_research(engine, actor, version, "water_quality.csv"))
-        source_details = labels[version]
-        metrics = MEASUREMENTS
-        regions = st.multiselect("Regions", sorted(frame.region.unique()), default=sorted(frame.region.unique()))
-        frame = frame[frame.region.isin(regions)]
-        st.caption("FWI / CC-BY-4.0. Visit-weighted observational trends; morning and evening stay separate. Stock/FCR cannot be inferred from this dataset.")
     if frame.empty:
-        st.info("No observations available for this source. Record farm activity or import an FWI snapshot first.")
+        st.info("No observations available for this source. Record farm activity or pond water visits first.")
         return
     options = sorted(frame.pond.dropna().unique())
     selected = st.multiselect("Ponds in analysis", options, default=options)

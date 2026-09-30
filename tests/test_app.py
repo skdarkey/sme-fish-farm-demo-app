@@ -4,6 +4,7 @@ from streamlit.testing.v1 import AppTest
 
 
 def test_demo_navigation_and_daily_save(tmp_path, monkeypatch):
+    monkeypatch.setenv("CLIENT_NAME", "Sekom Farms")
     monkeypatch.setenv("AUTH_MODE", "demo")
     monkeypatch.setenv("APP_MODE", "demo")
     monkeypatch.setattr("farm.db.settings", lambda: ("demo", "sqlite:///" + (tmp_path / "ui.db").as_posix()))
@@ -12,7 +13,9 @@ def test_demo_navigation_and_daily_save(tmp_path, monkeypatch):
     next(b for b in app.button if b.label == "Load sample farm").click().run()
     assert not app.exception
     assert len(app.metric) == 4
-    for page in ["Reports", "Water visits", "Advanced insights", "FWI data", "User access", "Ponds & stocking", "Daily records"]:
+    assert app.sidebar.title[0].value == "🐟 A3 Pondwise | Sekom Farms"
+    assert "FWI data" not in app.sidebar.radio[0].options
+    for page in ["Reports", "Water visits", "Advanced insights", "User access", "Ponds & stocking", "Daily records"]:
         app.sidebar.radio[0].set_value(page).run()
         assert not app.exception
     next(c for c in app.checkbox if c.label.startswith("Replace")).check()

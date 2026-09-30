@@ -13,7 +13,6 @@ Cite evidence sections such as [KPI], [TREND], [MEASUREMENTS], [DATA_QUALITY] an
 State the selected pond/date/snapshot scope. Distinguish cumulative KPIs from period trends.
 Do not invent measurements, costs, forecasts, causes, daily feed totals for research visits, or missing harvest weights.
 Keep TAN as nitrogen, TAN as NH3 and unionized NH3 separate; morning/evening observations are not interchangeable.
-FWI visit mortality is since the previous visit, not daily mortality. FWI research observations cannot establish live inventory or FCR.
 Sampling frequency, equipment and follow-up selection can bias trends. Correlation is not causation.
 If the evidence cannot answer a question, say what data or filter change is needed.
 Give concise management observations and practical next checks. Do not prescribe chemical dosages or disease treatment.
@@ -41,7 +40,7 @@ def ask(engine, actor, question, evidence, history, config=None):
     if not config["model"]:
         raise ValueError("Set LLM_MODEL to a model installed on your inference server.")
     if not question.strip() or len(question) > 4000:
-        raise ValueError("Enter a question of 1–4,000 characters.")
+        raise ValueError("Enter a question of 1â€“4,000 characters.")
     context = json.dumps(evidence, ensure_ascii=False, allow_nan=False)
     if len(context) > 40000:
         raise ValueError("The evidence is too large. Narrow the pond or date filters.")
@@ -54,6 +53,7 @@ def ask(engine, actor, question, evidence, history, config=None):
     headers = {"Content-Type": "application/json"}
     if config["provider"] == "ollama":
         url = config["endpoint"] + "/api/chat"
+        payload["think"] = False
         payload["options"] = {"temperature": 0.2, "num_predict": 1200}
     else:
         url = config["endpoint"] + "/chat/completions"

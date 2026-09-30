@@ -6,7 +6,6 @@ import pytest
 
 from farm.auth import Actor
 from farm.db import initialize, make_engine
-from farm.fwi import FILES, WATER_METRICS, import_fwi, prepare_import, read_research, water_frame
 from farm.insights import evidence_packet, trend_table
 from farm.llm import ask, configuration
 from farm.services import add_pond
@@ -20,45 +19,6 @@ def demo(monkeypatch):
     engine = make_engine("sqlite:///:memory:")
     initialize(engine)
     return engine, Actor(-1)
-
-
-def fixture_files():
-    files = {}
-    for name, day in FILES.items():
-        row = {"pond_id": "ara2_1234abcd", "region": "Eluru", day: "08/06/2026"}
-        if name == "water_quality.csv":
-            row.update(dict.fromkeys(WATER_METRICS, ""))
-            row.update({"Type": "Morning", "Time of data collection": "07:15", "DO (mg/L)": "3.5"})
-        if name == "stocking_harvest.csv":
-            row.update({"Type": "Partial harvest", "Fish harvested (total, in kg)": ""})
-        rows = [row, dict(row, **{"Pond area in acres": "2"})] if name == "enrolled_ponds.csv" else [row]
-        files[name] = pd.DataFrame(rows).fillna("").to_csv(index=False).encode()
-    return files
-
-
-def test_import_lossless_idempotent_and_mmdd_dates(demo):
-    engine, actor = demo
-    prepared = prepare_import(fixture_files(), "test snapshot")
-    dataset, created = import_fwi(engine, actor, prepared)
-    assert created
-    assert import_fwi(engine, actor, prepared) == (dataset, False)
-    raw = read_research(engine, actor, dataset, "enrolled_ponds.csv")
-    assert len(raw) == 2  # repeated enrollment preserved
-    assert raw.iloc[0].source_date == date(2026, 8, 6)
-    harvest = read_research(engine, actor, dataset, "stocking_harvest.csv")
-    assert harvest.iloc[0]["Fish harvested (total, in kg)"] == ""
-    frame = water_frame(read_research(engine, actor, dataset, "water_quality.csv"))
-    assert frame.iloc[0].oxygen == 3.5
-    assert pd.isna(frame.iloc[0].nh3)
-
-
-def test_rejects_old_namespace_or_invalid_schema():
-    files = fixture_files()
-    files["dropouts.csv"] = files["dropouts.csv"].replace(b"ara2_1234abcd", b"pond_1234abcd")
-    with pytest.raises(ValueError, match="namespace"):
-        prepare_import(files, "old")
-    with pytest.raises(ValueError, match="exactly"):
-        prepare_import({}, "bad")
 
 
 def test_missing_periods_stay_missing_and_morning_evening_separate():
