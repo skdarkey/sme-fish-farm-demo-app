@@ -22,15 +22,6 @@ h1,h2,h3 {letter-spacing:-0.035em;}
 </style>""", unsafe_allow_html=True)
 
 
-import requests
-try:
-    ip = requests.get(
-        "https://api.ipify.org", timeout=10
-    ).text.strip()
-    st.write("Server outbound IP:", ip)
-except requests.RequestException:
-    st.write("Unable to retrieve server outbound IP.")
-
 @st.cache_resource
 def database():
     mode, url = settings()
