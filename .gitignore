@@ -4,5 +4,6 @@ __pycache__/
 *.pyc
 .env
 .streamlit/secrets.toml
+.streamlit/personal.notes.example 
 data/
 reports/
